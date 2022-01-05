@@ -1,0 +1,126 @@
+========================================================================================================================================
+==========================================================     Introdution     =========================================================
+========================================================================================================================================
+
+Les containers sont comme les VMs, isolés l'un de l'autre mais ils n'mebarquent pas l'OS et sont donc plus légés. Ils ont leurs propres
+filesystem, partage de CPU, mémoire, etc. Un container est plus facile à créer qu'une VM.
+
+Kubernetes sert à manager les containers. S'il y en a un qui vient à tomber, il en relancer un. Il permet également de faire du load
+balancing entre les apps. Permet de créer de nouveaux containers lorqu'on met à jour l'app et ensuite redistribue les ressources des 
+anciens containers aux nouveaux.
+
+Kubernetes ne permet pas de : déployer les apps ou de les builder, ne founit pas de services comme un cache, service de bus ou BDD, etc.
+
+Quand on déploie K8s, on obtient un cluster consitué d'un ensemble de noeud.
+
+========================================================================================================================================
+==========================================================     Architecture    =========================================================
+========================================================================================================================================
+
+- Le Control Plane permet de garder l'état souhaité sur le kube. L'état correspond à : 
+	- quelles applications ou autres processus sont exécutés, 
+	- quelles images de conteneur elles utilisent, 
+	- le nombre de réplicas, 
+	- les ressources réseau et disque qu'on met à disposition
+Le Control Plane est effectué par le noeud master et 2 processus sur chaque autre noeud.
+
+- Kubernetes master : s'exécute sur un noeud du cluster (noeud maître). Lance 3 processus : 
+	- kube-apiserver : expose l'API de K8s permettant de modifier le Control Plane
+	- kube-controller-manager : exécute les boucles pour contrôler l'état du cluster. (Noeud, réplicas, endpoints, API account, etc.)
+	- kube-scheduler : lie les nouveaux pods avec un noeud
+- Kubernetes slave :
+	- kubelet : communique avec le master
+	- kube-proxy : proxy réseau reflétant les services réseau Kubernetes sur chaque nœud.
+
+- Autre :
+	- etcd : bdd clé valeur pour sauvegarder les données du cluster
+	- cloud-controller-manager : fait le lien avec l'API du cloud provider. Comme le K8s controller, il exécute des boucles pour checker 
+	les noeuds, les route dans l'infra et le load balacing.
+
+========================================================================================================================================
+=============================================================     Object    ============================================================
+========================================================================================================================================
+
+============ Objects ============
+
+- POD : A Kubernetes Pod is a group of one or more Containers. A Pod is the basic execution unit of a Kubernetes application. Un Pod représente des process en cours d'exécution dans votre cluster. A Pod is a Kubernetes abstraction that represents a group of one or more application containers (such as Docker), and some shared resources for those containers. Those resources include:
+	- Shared storage, as Volumes
+	- Networking, as a unique cluster IP address
+	- Information about how to run each container, such as the container image version or specific ports to use
+- SERVICE : Un Service est responsable de l'accès réseau pour un ensemble de pods. Les pods ont leurs propres adresses IP, quand un pod meurt et qu'un autre se créé l'adresse change. Le service permet d'ignorer se changement pour les clients des pods. K8s associe une adresse IP au servuce (IP cluster)
+- VOLUME :
+- NAMESPACE : Représente un virtual cluster sur le serveur physique. Permet de séprarer K8s pour plusieurs users. Pas besoin de plusieurs namespace pour séparer les ressources, tel qu'une version différente de l'application. Utiliser les labels pour effectuer la distinction.
+
+Type de service :
+	- ClusterIP : The default value. The service is only accessible from within the Kubernetes cluster – you can’t make requests to your Pods from outside the cluster!
+	- NodePort : This makes the service accessible on a static port on each Node in the cluster. This means that the service can handle requests that originate from outside the cluster.
+	- LoadBalancer : The service becomes accessible externally through a cloud provider's load balancer functionality. GCP, AWS, Azure, and OpenStack offer this functionality. The cloud provider will create a load balancer, which then automatically routes requests to your Kubernetes Service
+
+============ Controlers ============
+
+- REPLICASET :
+- DEPLOYMENT : A Kubernetes Deployment checks on the health of your Pod and restarts the Pod's Container if it terminates,
+- NODES : A Pod always runs on a Node. A Node is a worker machine in Kubernetes and may be either a virtual or a physical machine, depending on the cluster. Each Node is managed by the Master. A Node can have multiple pods, and the Kubernetes master automatically handles scheduling the pods across the Nodes in the cluster. The Master's automatic scheduling takes into account the available resources on each Node. Every Kubernetes Node runs at least:
+	- Kubelet, a process responsible for communication between the Kubernetes Master and the Node; it manages the Pods and the containers running on a machine.
+	- A container runtime (like Docker) responsible for pulling the container image from a registry, unpacking the container, and running the application.
+- STATEFULSET :
+- DEAMONSET : met 1 container sur chaque noeud et 1 seule fois
+- JOB : 
+
+- We could use a deployment without a service to keep a set of identical pods running in the Kubernetes cluster. The deployment could be scaled up and down and pods could be replicated. Each pod could be accessed individually via direct network requests (rather than abstracting them behind a service), but keeping track of this for a lot of pods is difficult.
+- We could also use a service without a deployment. We'd need to create each pod individually (rather than "all-at-once" like a deployment). Then our service could route network requests to those pods via selecting them based on their labels.
+
+- Lorsqu'on créé un déploiement : 
+	- searched for a suitable node where an instance of the application could be run (we have only 1 available node)
+	- scheduled the application to run on that Node
+	- configured the cluster to reschedule the instance on a new Node when needed
+- By default, the Pod is only accessible by its internal IP address within the Kubernetes cluster. To make the hello-node Container accessible from outside the Kubernetes virtual network, you have to expose the Pod as a Kubernetes Service. (-> expose)
+- On cloud providers that support load balancers, an external IP address would be provisioned to access the Service. On minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+
+Les objets sont définis par 2 choses : SPEC (Description de l'objet désiré) et STATUS (l'état courant de l'objet);
+
+Voir la différence 												kubectl diff -f configs/
+Créer un objets 												kubectl apply -f configs/
+Se connecter au container 										kubectl exec -ti <POD_NAME> bash
+Créer un objet 													kubectl create -f nginx.yaml (--record)
+Delete 															kubectl delete -f nginx.yaml -f scondFile.yaml (--force)
+Update 															kubectl replace -f nginx.yaml
+Afficher les noeuds disponibles									kubectl get nodes
+Détaille de l'objet                                             kubectl describe pod <po-name>
+Récupérer les événements										kubectl get events
+Créer un déploiement en utilisant une image existante 			kubectl create deployment hello-minikube --image=k8s.gcr.io/echoserver:1.10
+Exposer le déploiement											kubectl expose deployment hello-minikube --type=NodePort --port=8080
+Vérifier que le micro service est démarré						kubectl wait --for=condition=ready pod -l app=inventory
+Récupérer les pods												kubectl get pod -n <NameSpace>
+Obtenir le nodePort du services 								kubectl get service $SERVICE --output='jsonpath="{.spec.ports[0].nodePort}"'
+Ajouter un label 												kubectl label pod $POD_NAME app=v1
+Ajouter des réplicats 											kubectl scale deployments/kubernetes-bootcamp --replicas=4
+Mettre à jour une app 											kubectl set image deployment/<app-name>-app <app-name>=<new-image>
+Confirmer les maj / Voir les maj en cours						kubectl rollout status deployments/kubernetes-bootcamp
+Mettre en pause un deployment                                   kubectl rollout pause deployment.v1.apps/nginx-deployment (permet de faire plusieurs maj avant de les appliquer)
+Reprendre un deployment                                         kubectl rollout resume deployment.v1.apps/nginx-deployment
+Voir l'historique d'un déploiement                              kubectl rollout history deployments/kubernetes-bootcamp
+Rollback														kubectl rollout undo deployments/kubernetes-bootcamp
+Supprimer le service 											kubectl delete services hello-minikube
+Supprimer le déploiement										kubectl delete deployment hello-minikube
+Connection au registry de gitlab								kubectl create secret generic regcred --from-file=.dockerconfigjson=$HOME/.docker/config.json 
+																--type=kubernetes.io/dockerconfigjson
+
+Ouvrir le dashboard 											minikube dashboard
+Obtenir l'adresse IP											minikube ip
+Récupérer l'url du service										minikube service hello-minikube --url
+																minikube service [-n NAMESPACE] [--url] NAME	
+
+export NODE_PORT=$(kubectl get services/kubernetes-bootcamp -o go-template='{{(index .spec.ports 0).nodePort}}')
+
+Hello minikube tuto :
+	kubectl create deployment hello-node --image=k8s.gcr.io/echoserver:1.4 (créer le Deployment)
+	kubectl get deployments
+	kubectl get pods
+	kubectl get events
+	kubectl expose deployment hello-node --type=LoadBalancer --port=8080 (créer le Service)
+	minikube service hello-node (accès à l'extérieur)
+	kubectl delete service hello-node
+	kubectl delete deployment hello-node
+
+

@@ -1,0 +1,21 @@
+apiVersion: apps/v1 # @NotNull : version de l'API
+kind: Deployment  # @NotNull : type de l'objet
+metadata:  # @NotNull : pour identifier l'objet avec soit un name, UID et optionnel namespace
+  name: nginx-deployment # Unique par type d'objet
+  # UID:
+  # namespace:
+spec: # @NotNull : pour décrire l'état de l'objet. Dépend du type de l'objet
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80

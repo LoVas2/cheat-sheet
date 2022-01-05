@@ -1,0 +1,24 @@
+===================================================================================================================================================================
+																			DOCKER
+===================================================================================================================================================================
+
+Liste les images : 														docker images
+Liste les containers : 													docker ps -a
+Créer un container et le garde up (depuis une image) : 					docker run -t -d (detach) -p HOST_PORT:CLIENT_PORT (MACHINE(pc):CONTAINER) --name my_name myImage
+Pour aller dans le container : 											docker exec -it my_name bash
+Pour supprimer un container :											docker rm containerID
+
+Liste les images : 										docker-compose images
+
+1. docker-compose build myImage
+2. docker-compose create myImage
+3. docker-compose start myImage
+4. docker-compose exec myImage bash
+
+docker-compose stop myImage && docker-compose rm -f myImage && docker-compose create myImage && docker-compose start myImage
+
+Push to Gitlab Registry :
+docker login registry.gitlab.com -u user -p 23xx.........
+docker login registry.gitlab.com -u user -p 23xx.........
+docker image tag myWebapp registry.gitlab.com/loic-perso/backend/myWebapp:4.0.4
+docker image push registry.gitlab.com/loic-perso/backend/myWebapp:4.0.4

@@ -1,0 +1,476 @@
+===================================================================================================================================================================
+																			UNIX
+===================================================================================================================================================================
+
+ssh -L 55214:tdtest12s:8089 user@gateway-fr								    	Ouvrir tunnel
+ssh user@tdtest12s -o StrictHostKeyChecking=no							    	Ne pas vérifier le host qd on se connecte à putty
+rpm -qa | grep tomcat															Chercher les packages installés
+export CATALINA_HOME=/usr/share/tomcat/											Changer les variables d'environnement
+tar -zcvf lib.tar /usr/share/tomcat7/lib/*	    								Créer ZIP / TAR
+nslookup tdtest12s		    													Infos sur la machine
+netstat -tanup | grep 1521														Voir les connexions ouvertes
+ntpq -p																			Voir la conf sur la synchro des dates
+ntpdate tdtest12s.sys.meshcore.net
+nohup <cmd> &																	Donner le process à la VM
+df -h																			Taille des disques
+du -sh *																		Taille des fichiers des sous-répertoire
+wc -l file.txt																	Compter le nbre de ligne
+cut -d ';' -f4																	Sépare une ligne par ';' et récupère le 4ème élément
+uniq																			Récupère les uniques
+sed 's/regexpToFind/newText/'													Remplace la regexp par le nouveau text
+sed -i '/\"codeDepartement\":\"5[0-3]\"/d' upsert_nymes.sjson
+ awk '{filename = sprintf("text%d.txt", NR); print >filename; close(filename)}' upsert_nymes_03.sjson	Sépare les lignes dans différents fichiers
+grep \"codeDepartement\": upsert_nymes.sjson.save | cut -d ',' -f14 | grep codeDepart | uniq
+%s/word/replace/g(toutes les occurences)										Replace word in VI
+ss -lptn 'sport = :8083'														Trouver le pid sur un port
+jmap -dump:live,format=b,file=/tmp/dump.hprof 31458								Dump de la mémoire sur un pid
+
+
+																				Loop exemple
+
+for i in $( ls | grep D ); do echo $i && ll $i | wc -l ; done					Nombre de fichier dans les sous-répertoires
+for i in $( ls | grep SHX ); do rename .SHX .shx $i ; done						Rename les fichiers
+for i in `seq 2 3`; do mkdir DEP00$i; done										Créer des répertoires
+for d in $(ls | grep DEP | grep -v LVA); do (for i in $(ls $d/); do cp $d/$i LVA$d/$i; done); done
+																				Copie des fichiers vers un autre répertoire
+
+sudo lsof -i -n -P | grep 8014
+
+===================================================================================================================================================================
+																			GIT
+===================================================================================================================================================================
+git config --list																Liste la configuration
+git config --global --unset credential.helper									Unset configuration mdp
+git config --global credential.helper store										Store mdp configuration
+git config --list --show-origin													Affiche les fichiers de conf
+
+git branch -D 1.1.3.4-R4FIX1													Delete branche
+
+git reset HEAD~1 																Annule un commit local
+git reset --soft HEAD~;
+
+git log -1
+git show 5358e50be1b17413444288cf2fce847f34803f7e
+git revert 5358e50be1b17413444288cf2fce847f34803f7e
+
+===================================================================================================================================================================
+																			Angular
+===================================================================================================================================================================
+ng lint --type-check
+ng build
+ng build --prod
+ng test
+
+ng serve --host 0.0.0.0 --disable-host-check
+ng serve --proxy-config proxy.conf.json
+
+myapp : ng serve --host 0.0.0.0 --port 4300 --disable-host-check --base-href /myapp/ --deploy-url /myapp/
+
+Ctrl + Alt + O réorganiser les imports
+Alt + Shift + F formattage
+
+Local avec npm link :
+	Dans le répertoire de la librairie (front-fwk) :
+		npm install
+		ng build
+		cd dist/front-fwk-lib
+		npm link
+	Dans le répertoire de l'application (front-prototype) :
+		npm install
+		npm link front-fwk-lib
+	Retourner dans la librairie :
+		ng build --watch
+
+Fichier .npmrc d'un projet écrase la config npm globale
+
+Websocket :
+	TEXT_FULL_WRITING : tentative d’écriture de message  par le endPoint back alors qu’un autre message était en cours d’écriture. Concurrence d’écriture. Normalement réglé en faisant un synchronized sur les send de la WebSocket.
+Bus :
+	Etendre un BusDefinition : exemple MainCouranteDefinition
+	On définit des chaines, et un master et des slaves
+	Constructeur : nom du bus et on lui définit des chaines
+		portail, evt : chaines fonctionnelles
+		abonnement, desabonnement : chaines techniques, pas de diffusion, comm intercouche pour s'abonner/se désabonner
+Actuellement :
+	Que des messages websocket du back vers le front,
+	front vers le back que pour abonnement/désabonnement
+Abonnement :
+	Abonnement enregistré dans IndexedDb : qd on ferme un onglet Master -> Maj auto pour qu'un slave reprenne la main
+	Voir MainCouranteEvenement.component.ts : generateAbonnement()
+
+======================================> Authentification
+L'AuthGuard et le Resolver sont tous les deux des guards. C'est  à peu près la même chose à la différence que dans un cas la résolution est attendue par le component, et dans l'autre c'est la navigation qui décide la redirection vers la bonne page.
+
+======================================> how-to proxy to Backend
+Pour appeler un API exposé via web service REST depuis une application front déployée sur un domaine différent, il convient de mettre en place un proxy pour éviter "le problème" CORS.
+Solution 1: installer un proxy apache (solution non décrite ici)
+Solution 2: utiliser le proxy mis à disposition par webpack. C'est la méthode la plus simple à mon sens.
+créer un fichier proxy.conf.json à la racine du projet (au même niveau que le package.json) et ajouter la config suivante:
+{
+"/back-utilisateur-web/api/*":
+	{
+		"target":"http://localhost:8880",
+		"secure": false,
+		"logLevel":"debug",
+		"changeOrigin":true
+	}
+}
+dans package.json, modifier l'alias "start" pour prendre en charge le configuration du proxy
+"start": "ng serve --proxy-config proxy.conf.json",
+utiliser npm start pour lancer le server
+
+==================================> Modal et Popin
+Une Modal est un composant qui affiche du Html (ou un autre composant) utilisé pour afficher un contenu caché (une portion de page, un formulaire, les détails d’une ligne de tableau (technique de Master/Detail), un WIZARD, etc…)
+Elle est utilisée pour afficher une quantité considérable d’infos (elle peut contenir des boutons ou pas).
+
+Une popin est une petite fenêtre utilisée pour interagir avec l’utilisateur (confirmation, Alerte, message) elle contient un titre un message et un ou plusieurs boutons d’actions.
+Le composant popin doit implémenter des événements pour qu’on puisse créer des callbacks après l’action de l’utilisateur (confirmer, annuler, …)
+
+===================================================================================================================================================================
+																			AUTHENTICATION
+===================================================================================================================================================================
+- Authentification auprès des composants back via un jeton Keycloak (token JWT) véhiculé dans un cookie spécifique (SSO_TOKEN)
+- Rewrite rules Apache de contrôle de présence de ce cookie lors des accès aux appli. Angular et aux composants back et, en cas d'absence, redirection vers un composant dédié "index.html"
+- Composant "index.html" gérant seul les échanges (via redirection) avec Keycloak pour l'authentification et la création du cookie SSO_TOKEN
+
+Cette solution solutionne plusieurs problèmes :
+
+- Plus de gestion des redirections via intercepteur Angular
+- Plus de problème de visibilité httpOnly des cookies Keycloak
+- Plus besoin de WS de ping ou login d'un composant pour forcer l'authentification en bloquant les autres appels de WS tant que celui-ci n'a pas abouti.
+
+---- Etape de connexion :
+	1. Lorsque l'utilisateur arrive sur "https://www.portail.dev.net/"
+	2. Le serveur Apache vérifie la présence du Cookie : SSO_TOKEN. Si pas de cookie : on redirige vers /index-web/api/login
+	3. Index redirige ensuite vers KC avec comme paramètre dans l'URL le client ID (project-oidc) et le redirect URI (index-sso-callback). Index à garder en mémoire l'URL d'origin demander par l'utilisateur afin de le réorienter à la fin.
+	4. On accède directement à KC depuis le F5
+	X. Suite à l'authent réussi, on envoie un access token et un refresh token.
+	X. La durée de vie est dans l'access token (claim EXP = 15min) et on utilise le refresh token pour rafraichir
+
+---- Jeton :
+Un jeton est dédié à 1 et 1 seul client (application).
+Une fois fois l'utilisateur authentifié, Keycloak devrait, suite à la redirection depuis XpertEye, dans le cadre de l'Authorization Code Flow, retrouver la session de l'utilisateur (cookies HTTP-only déposés sur le navigateur)
+et retourner un code d'autorisation à XpertEye sans afficher la mire de connexion.
+
+---- Appel du REFRESH TOKEN : back-index-web/api/login/refresh
+Le service Refresh :
+	- sert à rafraichir le token de l'utilisateur
+	- est appelé toutes les 10min par le FRONT. Géré par le bus pour avoir un appel par Portail et PAS par onglet
+	- s'il renvoie 302 => le refresh token a expiré
+	- l'access token expire toute les 15min
+
+---- Sticky session
+L'utilisateur se connecte toujours au meme tomcat via le cookie stickysession par session.
+Lorsqu'il se connecte / déconnecte, on n'est pas sur qu'il se reconnecte au meme tomcat avec le load balancing
+
+---- Déconnexion :
+	Pas d’événements dans OpenID Connect. C’est du REST pur et dur
+	Nous on simule des événements via le bus front
+
+---- Connexion par CPx :
+En fait, cpx-login-action correspond juste à une URL clone de login-action sur le F5 sur laquelle on force la renégociation de la session SSL/TLS en mode authentification client, pour forcer le navigateur à accéder au magasin de certificat (la carte CPx).
+Quand le navigateur envoie le certificat public issu de la carte CPx, le F5 interroge le répondeur OCSP pour vérifier que le certificat est valide (non expiré et non révoqué). S'il l'est, la session SSL/TLS est établie.
+Quand la requête HTTP vers cpx-login-action passe sur cette session, le F5 ajoute, sous forme de headers HTTP les informations du certificat à destination de Keycloak.
+
+---- Offline
+The Spring configuration should install a technical user (with an offline token) that is used when a service call is triggered without a connected (human) user. Upon making a service call, the HTTP client should retrieve the user's Access Token and, if not present, use the technical user's token.
+
+-- Généralité
+OAuth 2.0 for authorization and OIDC for authentication.
+
+OAuth 2.0 is one of the most popular authorization frameworks out there. It is designed to allow an application to access resources hosted by other servers on behalf of a user. OAuth 2.0 uses Access Tokens and Refresh Tokens.
+
+OpenID Connect (OIDC) is an identity protocol that performs user authentication, user consent, and token issuance. OIDC uses ID Tokens.
+
+
+===================================================================================================================================================================
+																			KEYCLOAK
+===================================================================================================================================================================
+
+JBOSS-CLI : ./jboss-cli.sh --connect
+	- Liste les ear déployés : /deployment=*:read-attribute(name=name)
+	- Supprimer un déploiement : undeploy back-sso-bundle-1.1.5.1-P4.ear
+	:read-resource(include-runtime=true)
+
+	# Configure jboss-logging event listener
+	/subsystem=keycloak-server/spi=eventsListener:add(default-provider=jboss-logging)
+	/subsystem=keycloak-server/spi=eventsListener/provider=jboss-logging:add(enabled=true)
+	# Propagate success events to INFO instead of DEBUG
+	# This allows to track successful logins in log analysis
+	/subsystem=keycloak-server/spi=eventsListener/provider=jboss-logging:write-attribute(name=properties.success-level,value=info)
+	/subsystem=keycloak-server/spi=eventsListener/provider=jboss-logging:write-attribute(name=properties.error-level,value=warn)
+	:reload
+
+-- Get credentials
+bin/kcadm.sh config credentials --server "http://localhost:8080/auth" --realm master --user "admin" --password "azerty"
+
+-- Create Claim
+bin/kcadm.sh create clients/f8710XXXX-xxx/protocol-mappers/models -r "master" -s "name=metier" -s protocol=openid-connect -s protocolMapper=oidc-usermodel-attribute-mapper -s "config.\"access.token.claim\"=true" -s "config.\"claim.name\"=metier" -s "config.\"jsonType.label\"=String" -s "config.\"id.token.claim\"=true" -s "config.\"user.attribute\"=metier" -s "config.\"userinfo.token.claim\"=true"
+
+Changement mdp admin :
+/opt/jboss/keycloak/bin/add-user-keycloak.sh -u admin
+
+Healthcheck : curl  127.0.0.1:8089/auth/realms/master/health/check | jq (health check KC)
+
+Get Offline Token :
+curl -i --data "scope=offline_access&grant_type=password&client_id=project-oidc&client_secret=7e6XX-XXX&username=technical.user&password=XXX" http://localhost:8080/auth/realms/master/protocol/openid-connect/token | grep -Po 'access_token":"\K[^"]+' > access_token.txt
+
+refresh the token (en dev il est présent dans le fichier server.xml:
+Get access Token :
+curl -XPOST -i --data "client_id=project-oidc&client_secret=7e6XXX-XXX&grant_type=refresh_token&scope=openid%20profile&refresh_token=eyJhbGci..." http://localhost:8080/auth/realms/master/protocol/openid-connect/token
+
+Curl avec l'access token :
+-H "cookie:SSO_TOKEN=eyJhb...."
+Exemple en dev :
+
+curl -XGET -H "cookie:SSO_TOKEN=eyJhb..." curl -v http://localhost:8083/back-utilisateur-web/api/v1/current
+
+security:
+  oauth2:
+    client:
+      clientId: utilisateur
+      clientSecret: fecb355f-9d22-4a54-bb55-602dbe4b0cc8
+      accessTokenUri: https://dev-front-connect.net/auth/realms/master/protocol/openid-connect/token
+      userAuthorizationUri: https://dev-front-connect.net/auth/realms/master/protocol/openid-connect/auth
+      tokenStore: cookie
+    resource:
+      userInfoUri: https://dev-front-connect.net/auth/realms/master/protocol/openid-connect/userinfo
+
+===================================================================================================================================================================
+																			APACHE
+===================================================================================================================================================================
+
+ProxyPass /back-utilisateur-web/api balancer://utilisateur/back-utilisateur-web/api stickysession=JESSIONID|jsessionid scolonpathdelim=On
+ProxyPassReverse /back-utilisateur-web/api balancer://utilisateur/back-utilisateur-web/api
+
+Passer d'AJP à HTTP fait perdre la visibilité qu'ont les workers Apache sur l'état des Tomcat qu'apporte le mode connecté d'AJP (en particulier lors des shutdowns).
+
+Apache changeait le header Host lorsqu’il appelait les serveurs qu’il proxy (le comportement par défaut). Mais c’était sans compter sur la directive « ProxyPreserveHost On » qui garde celui du front (www.portail.dev.net par ex) et dont on a besoin pour le reste de l’appli
+
+===================================================================================================================================================================
+																			TOMCAT
+===================================================================================================================================================================
+Tomcat Debug :
+JAVA_OPTS= -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000
+Ouvrir le tunnel ssh -N -L localhost:8000:localhost:8000 deploy@api-mobile-preprod-2.fr
+
+bin/catalina.sh jpda start -agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n
+-Xdebug -Xrunjdwp:transport=dt_socket,address=8800,server=y,suspend=n -Djava.security.debug=failure
+
+Version Tomcat :
+java -cp /usr/share/tomcat/lib/catalina.jar org.apache.catalina.util.ServerInfo
+
+===================================================================================================================================================================
+																			KEYTOOL
+===================================================================================================================================================================
+
+- Create empty Keystore :
+	keytool -keystore keystore_datahub.jks -genkey
+- Create TRUSTSTORE from Certificat :
+	keytool -import -file myCert.cer -alias aliasCert -keystore trustStore
+- List les certs :
+	keytool -keystore /home/www/truststore.jks -storepass password -list
+- Ajout cert :
+	keytool -importkeystore -srckeystore /home/www/ORG_AUTH_CLI-dev.p12 -srcstorepass "password" -destkeystore /home/www/keystore.jks -deststorepass "password" -srcalias "1" -destalias "org_auth_cli-dev"
+- Ajout CA :
+	keytool.exe -import -trustcacerts -file CA_IGC_Sante.pem -keystore truststore.jks -alias partenaires
+- Print P12 :
+	keytool -v -list -storetype pkcs12 -keystore ORG_AUTH_CLI_authentificationRASS-dev.p12
+- Change P12 Password :
+	openssl pkcs12 -in /home/www/ORG_AUTH_CLI-dev.p12 -out temp.pem -passin pass:">GvRdmtTJh,0" -passout pass:password
+	openssl pkcs12 -export -in temp.pem -out ORG_AUTH_CLI-dev.p12 -passin pass:password -passout pass:password
+	rm -rf temp.pem
+- Add TRUSTSTORE to JVM :
+	-Djavax.net.ssl.trustStore="/home/www/trustStore" -Djavax.net.ssl.trustStorePassword="azerty"
+- Récupérer un cert et l'ajouter à un trustStore :
+	- Récupérer le certificat root => view certificate, export cert X509 encodé DER
+	- Aller dans /usr/java/jdk-1.8/jre/lib/security
+	- Run keytool -importcert -keysore cacerts -file /home/www/my-cert.cer
+
+===================================================================================================================================================================
+																			BDD
+===================================================================================================================================================================
+-- SELECT NOM DES TABLES du schéma INT_SCHEMA
+SELECT table_name FROM user_tables;
+select table_name, num_rows countd from dba_tables where owner ='INT_SCHEMA';
+SELECT owner, concat(table_name, ' cascade constraints;') FROM dba_tables where owner ='INT_SCHEMA';
+select concat('DROP TABLE ', concat(table_name, ' cascade constraints;')) from dba_tables where owner ='DEV_TEAM2';
+select 'drop sequence ' || sequence_name || ';' from user_sequences;
+
+-- SELECT des séquences
+select SEQUENCE_NAME, SEQUENCE_OWNER from ALL_SEQUENCES where SEQUENCE_OWNER = 'INT_SCHEMA' ;
+
+-- Current datetime to milliseconds :
+SELECT (SYSDATE - TO_DATE('01-01-1970 00:00:00', 'DD-MM-YYYY HH24:MI:SS')) * 24 * 60 * 60 * 1000 FROM DUAL;
+-- Now + 5 min
+SELECT (SYSDATE - TO_DATE('01-01-1970 01:55:00', 'DD-MM-YYYY HH24:MI:SS')) * 24 * 60 * 60 * 1000 FROM DUAL;
+
+-- SELECT DOUBLON
+SELECT   contact_id, contact_of_id, count(*)
+FROM     personal_contact
+GROUP BY contact_id, contact_of_id
+HAVING   COUNT(*) > 1;
+
+Flyway :
+ /home/www/bin/flyway.sh -configFile=/home/www/flyway.conf -locations=filesystem:/MIDDLE/dev/livraison/applicatif/back-bdd-oracle/resources/ -target=1.1.20.4.99999999 migrate &>> /home/www/flyway.log
+
+Si on supprime la table flyway ajouter : -baselineOnMigrate=true
+
+flyway.conf :
+flyway.driver=oracle.jdbc.OracleDriver
+flyway.url=jdbc:oracle:thin:@//localhost:1521/INT_SCHEMA
+flyway.user=DEV_TEAM6
+flyway.password=PASSWORD
+flyway.schemas=DEV_TEAM6
+flyway.table=flyway_DEV_TEAM6
+flyway.installedBy=acacia
+
+SET SQL_SAFE_UPDATES = 0;
+
+-- Charset / Format for Emoticon in DB
+ALTER TABLE table CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE attendee MODIFY message mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+===================================================================================================================================================================
+																			MAVEN
+===================================================================================================================================================================
+
+========= Variables d'environnement =========
+
+Ajouter dans le pom dans la partie <build> :
+		<filters>
+			<filter>src/main/filters/local.properties</filter>
+		</filters>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+
+Exemple d'une variable dans local.properties : mvn_db_connection_user.value=root
+Exemple d'une variable dans myproperties.properties (src/main/resources) : mvn_db_connection_user=${mvn_db_connection_user.value}
+
+Debug a test by command line :
+-Dtest=MySuperClassTest#myTtest -Dmaven.surefire.debug
+
+===================================================================================================================================================================
+																			JAVA
+===================================================================================================================================================================
+
+Différence en POST et PUT :
+	- POST .......................s/ renvoie un 201 Created avec un HEADER Location = ID de l'objet créé
+	- PUT  ......................../{id} renvoie 200
+Lorsque l'ID n'est pas déterminé par le composant back on peut utilisé le PUT pour la création
+
+StreamingOutput
+
+type LocalDateTime.
+Et je me pose la question : mais pourquoi diable quelqu'un a-t-il eu l'idée d'utiliser cet objet ?
+C'est le pire objet temporel qu'il était possible de choisir !
+Pourquoi ? Parce qu'il ne gère pas les time zones et que la France ne se résume pas à la métropole. Impossible de gérer les DROM/COM (ex. DOM/TOM) avec un truc pareil.
+En remontant la piste, on tombe sur UtilisateurDto où les date sont... des chaînes de caractères ! Dans un objet Java !! Sérieux ? On va où là ?
+Et en regardant le mapper associé (UtilisateurMapper), on voit que le format est "dd/MM/yyyy HH:mm:ss". A-t-on déjà vu une organisation internationale normaliser un tel format ? La réponse est non.
+Toutes les dates et timestamps DOIVENT être véhiculées en JSON au format standard ISO 8601 ou, pour parler Java, DateTimeFormatter.ISO_OFFSET_DATE_TIME (1977-04-22T06:00:00Z).
+(Et je passe sur le fait que UtilisateurService renvoie des objets Utilisateur au lieu d'UtilisateurDto, en violation de toutes les règles d'architecture, du projet et d'ailleurs.)
+
+===============>>> Garbage Collector
+ajouter l'option "-XX:+HeapDumpOnOutOfMemoryError" à la commande de lancement des JVM Tomcat du Session Server ?
+En cas de OOM, la JVM produira un dump mémoire dans java_pid<pid>.hprof ; cela facilitera grandement l'analyse de ce type de problèmes à l'avenir.
+Une information importante : "There is no overhead when running an application with this option. Therefore, it's highly recommended to use this option always, especially in production."
+
+
+Supplier       ()    -> x
+Consumer       x     -> ()
+Callable       ()    -> x throws ex
+Runnable       ()    -> ()
+Function       x     -> y
+BiFunction     x,y   -> z
+Predicate      x     -> boolean
+UnaryOperator  x1    -> x2
+BinaryOperator x1,x2 -> x3
+
+===================================================================================================================================================================
+																			REGEXP
+===================================================================================================================================================================
+
+^ : Début de ligne															* 0 à n fois
+$ : fin de ligne															+ 1 à n fois
+. : n'importe que caractère													? 0 ou 1 fois
+| : Disjonction (a|b pour a ou b)											{3} exactement 3 fois
+[] : Marques de début et fin de classe										{3,} 3 fois ou plus
+() : Marques de début et fin de groupe										{3,5} 3 à 5 fois
+Ces caractères peuvent être déspécialisés avec le car. \
+
+(...) 	: Groupe
+(abc)+ 	: abc répété 1 à n fois
+[...] 	: Ensemble
+[abc] 	: a ou b ou c
+[^abc] 	: Non a ou b ou c
+[a-z] 	: Lettre min. de a à z
+[a-z0-9_'] : Lettre min. de a à z ou entier ou _ ou '
+
+^((?!hede).)*$ : Ligne ne contenant pas hede
+
+===================================================================================================================================================================
+																			SIG
+===================================================================================================================================================================
+
+gdal_translate -of GTiff -co COMPRESS=JPEG -co TILED=YES input.jp2 result.tif
+
+ogr2ogr -sql 'SELECT ID, CODE_HYDRO, NATURE, TOPONYME, STATUT_TOP, IMPORTANCE, DATE_CREAT, DATE_MAJ, DATE_APP, DATE_CONF, SOURCE, ID_SOURCE, STATUT, MAREE, PERMANENT, Z_MOY, REF_Z_MOY, MODE_Z_MOY, PREC_Z_MOY, HAUT_MAX, OBT_HT_MAX, COMMENT AS COMM FROM PLAN_D_EAU' output.shp PLAN_D_EAU.shp
+Ou plus simple en supprimant directement la colonne dans ton shapefile :
+ogrinfo PLAN_D_EAU.shp –sql  ‘ALTER TABLE PLAN_D_EAU DROP COLUMN COMMENT’
+
+====================================================================== MAPPROXY ====================================================================================
+mapproxy-util serve-develop mapproxy.yaml -b :8084 --debug
+mapproxy-seed -f mapproxy.yaml -s seed.yaml --seed ign_seed -c 2
+http://localhost:8084/wmts/1.0.0/webmercator/layer=GEOGRAPHICALGRIDSYSTEMS.PLANIGN&zoom=3&row=3&col=3
+curl -v "http://localhost:8080/wmts/1.0.0/webmercator/layer=GEOGRAPHICALGRIDSYSTEMS.PLANIGN&zoom=3&row=4&col=3"
+
+https://user:password@wxs.ign.fr/privateKey/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&layer=GEOGRAPHICALGRIDSYSTEMS.PLANIGN&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX=3&TILECOL=2&TILEROW=1&FORMAT=image/jpeg
+
+===================================================================================================================================================================
+																			AUTRES
+===================================================================================================================================================================
+
+activemq consumer --destination topic://DEV.UTILISATEUR.AUDIT
+on est censé avoir une DLQ par queue : X -> X.DLQ.
+Avec ce nommage, où trouve-t-on le nom de la queue cible ? Parce que sans queue cible, on ne sait pas qui devait consommer ce message pour investiguer l'origine du problème (sûrement une exception lors du traitement).
+Car les messages dans les topics sont volatiles (utilisés uniquement pour les web sockets). Je voudrais juste être sûr qu'on ne se retrouve pas avec des messages en DLQ suite à des plantages navigateur ou autres pertes de connexion websocket, si le code lance une exception suite à une erreur d'écriture réseau...
+
+=========================================== Scrum & SAFe
+•	Diagramme d’Ishikawa (le classique-qu-on-ne-vous-presente-plus)
+•	Fleur de lotus (plus simple et intuitif qu’Ishikawa), plus d’info sur http://www.agile-et-libre.fr/2015/05/retrospective-la-fleur-de-lotus.html
+•	6 chapeaux de Bono (accès plus sur la créativité que le diagramme d’Ishikawa) : https://www.lescahiersdelinnovation.com/2016/11/les-six-chapeaux-de-bono/
+•	Les 5 pourquoi ? (easy à mettre en place, facile de se louper) : https://www.qualiblog.fr/outils-et-methodes/la-methode-des-5-pourquoi-pour-eradiquer-vos-problemes/
+•	QQOQCP  (parfois trop simple) http://www.ouati.com/qqoqcp.html
+
+- Content-Type : oui application/pdf
+- Content-Filename : n'a pas lieu d'être, ce n'est pas un header standard
+- Content-Disposition : n'importe quoi !
+    - Si c'est une pièce jointe alors la valeur devrait être : attachment; filename="...". Parce que la disposition en question est d'abord "inline" ou "attachment", filename n'étant qu'une précision pour attachment.
+    - Mais ce n'est pas une pièce jointe, i.e. on ne demande PAS au navigateur de proposer à l'utilisateur d'enregistrer le fichier, on veut juste l'afficher. Donc, c'est "inline", i.e. la valeur par défaut et donc ce header ne sert à rien !
+Donc, il ne devrait y avoir qu'un et un seul header :
+    Content-Type : application/pdf
+
+==================================== Connexion BDD =============================
+faire le check juste avant d'utiliser la connexion plutôt qu'à intervalle régulier quand elle est inutilisé dans le pool
+checkOnBorrow : check la connexion avant de la transmettre à l'application plutot que tester périodiquement
+
+===================================== session ===============================
+Arf, oui, c'est le problème des caches client : la durée de mise en cache démarre à la réception des données. Donc, le client qui a lu la donnée juste avant sa mise à jour attendra 1h alors que celui qui l'a lue juste un peu moins d'1 heure avant aura la donnée à jour dans les secondes qui suivent la modification.
+
+Mais dans le cas présent, le système est conçu pour minimiser ce type de problèmes :
+ - L'IHM lit les habilitations de l'utilisateur au login et elles s'appliquent pour toute sa session.
+ - Idem pour les composants, à ceci près que la session HTTP dans un composant est créée à la 1ère requête donc potentiellement plusieurs heures après le login.
+
+Tant que les droits s'ajoutent, comme dans le cas des flags de déploiement, pas de problème : l'IHM aura les droits les plus anciens donc les plus restreints et n'offrira pas le moyen d'appeler des fonctionnalité activées post-login.
+Dans le cas de restrictions d'habilitations, oui, ça peut coincer car l'IHM offre l'accès au fonction mais un composant côté serveur avec une session fraîchement initialisée (donc sans les habilitations retirées) peut rejeter l'appel.
+C'est particulièrement vrai en cas d'appels en cascade côté serveur comme dans le cas de SF2.2 : Événement maintient une session HTTP pour l'utilisateur mais, les composants serveur étant stateless, lors de chaque requête Événement vers Dossier, Dossier va recharger les droits de l'utilisateur depuis la base et donc autoriser ou non les appels sur la base des droits actuels.
+
+
+======================= Web Socket ===================================
+Une autre piste à étudier : l'utilisation de la compression par message (permessage-deflate websocket extension, RFC 7692), supportée depuis Firefox 37 et Tomcat 7.0.56.
+Est-ce que la réduction de taille des données des messages permettrait d'accélérer les I/O réseau et donc de réduire le temps d'envoi (passé à attendre que les écritures réseau se réalisent) ?
+A priori, il suffirait ajouter un header HTTP "Sec-WebSocket-Extensions: permessage-deflate" à la demande d'ouverture websocket du bandeau pour l'activer.
