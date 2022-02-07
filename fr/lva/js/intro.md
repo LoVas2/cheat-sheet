@@ -11,13 +11,27 @@
 * Undefined : objet de type undefined indiquant une variable non initialisée
 * NaN : Not a Number
 
+
+### String interpolation
+
+````javascript
+const myName = `Alexander`;
+const salutation = `Bienvenue sur mon site ${myName}!`;
+console.log(salutation);   //retournera “Bienvenue sur mon site Alexander!” 
+````
+
 ## Les variables
 * **let :** permet de déclarer des variables qui pourront être utilisées dans un *bloc*. 
 * **const :** permet de déclarer des variables dont la valeur ne doit pas changer.
 * **var :** permet de déclarer des variables qui pourront être utilisées dans une *fonction*.
 
 Si on ne donne pas de valeur à la variable, par défaut elle vaut undefined.
-JavaScript se différencie de Java avec les variables ***var***, quand une de ces variables est déclarée dans un bloc *if*, elle est également disponible en dehors de ce bloc.
+JavaScript se différencie de Java avec les variables ***var***, 
+quand une de ces variables est déclarée dans un bloc *if*, 
+elle est également disponible en dehors de ce bloc.
+
+Les types primitifs sont passés par **valeur** alors que les objets et les tableaux sont passés par **référence**.
+
 
 ## Les opérateurs
 * **Opérateurs classiques :** +, -, *, / et % pour le reste (n'est pas égale à modulo)
@@ -52,6 +66,7 @@ Opérateur ternaire : ``let permis = (age > 18) ? "oui" : "non";``
 
 ### Les objets
 Les objets en JavaScript sont simplement des collections de paires nom-valeur. Équivalent à une HashMap en Java.
+Ce sont des **JSON**.
 Le **nom** est une chaîne de caractère et la **valeur** peut être n'importe quoi.
 
 Pour initialiser un objet ``let obj = new Object();`` ou en littéral ``let obj = {};``
@@ -72,6 +87,7 @@ let me = {[name] : 'Me', [age] : 18};
 
 ## Les tableaux
 ### Construire un tableau : 
+``let a = [];``<br/>
 ``let a = ["chien", "chat", "poule"];``<br/>
 ``let a = Array(9).fill(null),``
 

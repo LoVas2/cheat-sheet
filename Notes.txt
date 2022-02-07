@@ -21,6 +21,7 @@ sed 's/regexpToFind/newText/'													Remplace la regexp par le nouveau text
 sed -i '/\"codeDepartement\":\"5[0-3]\"/d' upsert_nymes.sjson
  awk '{filename = sprintf("text%d.txt", NR); print >filename; close(filename)}' upsert_nymes_03.sjson	Sépare les lignes dans différents fichiers
 grep \"codeDepartement\": upsert_nymes.sjson.save | cut -d ',' -f14 | grep codeDepart | uniq
+sed -i -E '/0.:..:..|1[012345679]:..:..|2.:..:../d' file.txt					Delete lines containing regexp
 %s/word/replace/g(toutes les occurences)										Replace word in VI
 ss -lptn 'sport = :8083'														Trouver le pid sur un port
 jmap -dump:live,format=b,file=/tmp/dump.hprof 31458								Dump de la mémoire sur un pid
