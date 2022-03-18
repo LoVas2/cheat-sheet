@@ -1,5 +1,3 @@
-oceane mamure - société digital -> carrefour
-
 Héritage - Extends
 
 Une classe ne peut hériter que d'une seule classe. 

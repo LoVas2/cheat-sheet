@@ -85,6 +85,16 @@ let you = new Person('You', 24);
 let me = {[name] : 'Me', [age] : 18};
 ````
 
+On utilise le **constructor** dans les classes :
+```javascript
+class Book {
+  constructor(title, pages) {
+    this.title=title;
+    this.pages=pages;
+  }
+}
+```
+
 ## Les tableaux
 ### Construire un tableau : 
 ``let a = [];``<br/>
@@ -111,7 +121,8 @@ a.forEach(function(currentValue, index, array) {
 ### Méthodes utiles
 Méthode | Description
 --- | ---
-``a.push(item);`` | Ajoute un élément au tableau
+``a.push(item);`` | Ajoute un élément à la fin du tableau
+``a.unshift(item);`` | Ajoute un élément au début du tableau
 ``a.join(sep)``| Convertit le tableau en une chaîne séparé par 'sep'
 ``a.pop()`` | Renvoie le dernier élément du tableau et le retire de celui-ci
 ``a.shift()`` | Renvoie le premier élément du tableau et le retire de celui-ci

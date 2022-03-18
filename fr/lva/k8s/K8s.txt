@@ -2,16 +2,16 @@
 ==========================================================     Introdution     =========================================================
 ========================================================================================================================================
 
-Les containers sont comme les VMs, isolés l'un de l'autre mais ils n'mebarquent pas l'OS et sont donc plus légés. Ils ont leurs propres
-filesystem, partage de CPU, mémoire, etc. Un container est plus facile à créer qu'une VM.
+Les conteneurs sont comme les VMs, isolés l'un de l'autre, mais ils n'embarquent pas l'OS et sont donc plus légés. Ils ont leurs propres
+filesystem, partage de CPU, mémoire, etc. Un conteneur est plus facile à créer qu'une VM.
 
-Kubernetes sert à manager les containers. S'il y en a un qui vient à tomber, il en relancer un. Il permet également de faire du load
-balancing entre les apps. Permet de créer de nouveaux containers lorqu'on met à jour l'app et ensuite redistribue les ressources des 
+Kubernetes sert à manager les conteneurs. S'il y en a un qui vient à tomber, il en relance un. Il permet également de faire du load
+balancing entre les apps. Permet de créer de nouveaux containers lorsqu'on met à jour l'app et ensuite redistribue les ressources des
 anciens containers aux nouveaux.
 
-Kubernetes ne permet pas de : déployer les apps ou de les builder, ne founit pas de services comme un cache, service de bus ou BDD, etc.
+Kubernetes ne permet pas de : déployer les apps ou de les builder, ne fournit pas de services comme un cache, service de bus ou BDD, etc.
 
-Quand on déploie K8s, on obtient un cluster consitué d'un ensemble de noeud.
+Quand on déploie K8s, on obtient un cluster constitué d'un ensemble de nœud.
 
 ========================================================================================================================================
 ==========================================================     Architecture    =========================================================
@@ -105,6 +105,9 @@ Supprimer le service 											kubectl delete services hello-minikube
 Supprimer le déploiement										kubectl delete deployment hello-minikube
 Connection au registry de gitlab								kubectl create secret generic regcred --from-file=.dockerconfigjson=$HOME/.docker/config.json 
 																--type=kubernetes.io/dockerconfigjson
+
+-- Config
+Set default namespace                                           kubectl config set-context --current --namespace=myNamespace
 
 Ouvrir le dashboard 											minikube dashboard
 Obtenir l'adresse IP											minikube ip

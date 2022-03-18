@@ -19,7 +19,7 @@ cut -d ';' -f4																	Sépare une ligne par ';' et récupère le 4ème 
 uniq																			Récupère les uniques
 sed 's/regexpToFind/newText/'													Remplace la regexp par le nouveau text
 sed -i '/\"codeDepartement\":\"5[0-3]\"/d' upsert_nymes.sjson
- awk '{filename = sprintf("text%d.txt", NR); print >filename; close(filename)}' upsert_nymes_03.sjson	Sépare les lignes dans différents fichiers
+awk '{filename = sprintf("text%d.txt", NR); print >filename; close(filename)}' upsert_nymes_03.sjson	Sépare les lignes dans différents fichiers
 grep \"codeDepartement\": upsert_nymes.sjson.save | cut -d ',' -f14 | grep codeDepart | uniq
 sed -i -E '/0.:..:..|1[012345679]:..:..|2.:..:../d' file.txt					Delete lines containing regexp
 %s/word/replace/g(toutes les occurences)										Replace word in VI
@@ -34,6 +34,10 @@ for i in $( ls | grep SHX ); do rename .SHX .shx $i ; done						Rename les fichi
 for i in `seq 2 3`; do mkdir DEP00$i; done										Créer des répertoires
 for d in $(ls | grep DEP | grep -v LVA); do (for i in $(ls $d/); do cp $d/$i LVA$d/$i; done); done
 																				Copie des fichiers vers un autre répertoire
+
+
+count=0; total=0; for i in `cat test.txt | grep -v https`; do ((count++)); total=$(echo $total+$i | bc ); done; echo "scale=2; $total / $count" | bc
+                                                                                Calculer une moyenne
 
 sudo lsof -i -n -P | grep 8014
 
@@ -208,23 +212,39 @@ bin/kcadm.sh config credentials --server "http://localhost:8080/auth" --realm ma
 -- Create Claim
 bin/kcadm.sh create clients/f8710XXXX-xxx/protocol-mappers/models -r "master" -s "name=metier" -s protocol=openid-connect -s protocolMapper=oidc-usermodel-attribute-mapper -s "config.\"access.token.claim\"=true" -s "config.\"claim.name\"=metier" -s "config.\"jsonType.label\"=String" -s "config.\"id.token.claim\"=true" -s "config.\"user.attribute\"=metier" -s "config.\"userinfo.token.claim\"=true"
 
-Changement mdp admin :
+-- Changement mdp admin :
 /opt/jboss/keycloak/bin/add-user-keycloak.sh -u admin
 
-Healthcheck : curl  127.0.0.1:8089/auth/realms/master/health/check | jq (health check KC)
+-- Healthcheck : curl  127.0.0.1:8089/auth/realms/master/health/check | jq (health check KC)
 
-Get Offline Token :
+-- Get Offline Token :
 curl -i --data "scope=offline_access&grant_type=password&client_id=project-oidc&client_secret=7e6XX-XXX&username=technical.user&password=XXX" http://localhost:8080/auth/realms/master/protocol/openid-connect/token | grep -Po 'access_token":"\K[^"]+' > access_token.txt
 
-refresh the token (en dev il est présent dans le fichier server.xml:
-Get access Token :
+curl -i --data "grant_type=password&client_id=tenup&username=loic&password=aa" http://localhost:8080/auth/realms/master/protocol/openid-connect/token | grep -Po 'access_token":"\K[^"]+'
+
+-- Get access Token :
+curl -XPOST -i --data "client_id=authz-client&client_secret=OHiTU7wsIiJGbtF3pchctEt7NkF80N63&username=loic&grant_type=password&password=aabb" http://localhost:8080/auth/realms/iam/protocol/openid-connect/token
+
+-- Get access Token with refresh token :
 curl -XPOST -i --data "client_id=project-oidc&client_secret=7e6XXX-XXX&grant_type=refresh_token&scope=openid%20profile&refresh_token=eyJhbGci..." http://localhost:8080/auth/realms/master/protocol/openid-connect/token
 
-Curl avec l'access token :
--H "cookie:SSO_TOKEN=eyJhb...."
-Exemple en dev :
+curl --location --request POST 'https://qlf-iamgdi-keycloak.aws.fft.fr/auth/realms/master/protocol/openid-connect/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'username=lvasseur' \
+--data-urlencode 'password=DBVEb3gyAJUEmovX4fD8' \
+--data-urlencode 'grant_type=password' \
+--data-urlencode 'client_id=admin-cli'
 
-curl -XGET -H "cookie:SSO_TOKEN=eyJhb..." curl -v http://localhost:8083/back-utilisateur-web/api/v1/current
+curl --location --request POST 'https://qlf-iamgdi-keycloak.aws.fft.fr/auth/admin/realms/iam/users' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJJWWQwRXZUenctLTVIdGlYelFHZloydnBqZkFwZTVfd3pEM2cxbWJmSmM4In0.eyJleHAiOjE2NDU3MTA5OTQsImlhdCI6MTY0NTY5NjU5NCwianRpIjoiMGFhYTEwNjUtOTBhNy00Y2Q3LWFhNDctYWQ4ODVmMDFhNmE1IiwiaXNzIjoiaHR0cHM6Ly9xbGYtaWFtZ2RpLWtleWNsb2FrLmF3cy5mZnQuZnIvYXV0aC9yZWFsbXMvbWFzdGVyIiwic3ViIjoiZDhlZWMwN2ItZDUwYS00NWQ4LTlhNTEtYjQ1MDBhYzAyYTMwIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiYWRtaW4tY2xpIiwic2Vzc2lvbl9zdGF0ZSI6ImI3NTNiN2FkLWM2Y2QtNDljZi05YTc3LWJmZTM2MTNlMjRjMSIsImFjciI6IjEiLCJzY29wZSI6InByb2ZpbGUgZW1haWwiLCJzaWQiOiJiNzUzYjdhZC1jNmNkLTQ5Y2YtOWE3Ny1iZmUzNjEzZTI0YzEiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6IkxvaWMgVmFzc2V1ciIsInByZWZlcnJlZF91c2VybmFtZSI6Imx2YXNzZXVyIiwiZ2l2ZW5fbmFtZSI6IkxvaWMiLCJsb2NhbGUiOiJlbiIsImZhbWlseV9uYW1lIjoiVmFzc2V1ciIsImVtYWlsIjoibHZhc3NldXJAaXBwb24uZnIifQ.OGwt0VIEJz4As4zXndgLHJeUztvLM6R1DXf8fZ7XOtrtuRbZkUR5Xm8ZSFUnD1IqqR8CwiiYAN9pc2tDcWde4hwNumJrQPBfYNqah6k0_eMWJrPcbZMeKnqOPDMvPPRwDmKtJRRqr9o5O2NRZ75Cch6Q7FxDD_wYeus-zZxJz0oxWPxhPXSr63sT6mobwjgjg_55IzdfqCLRDMoQzH5f8K-lsaWnSOZdYkUZXUaB5OCpaILs4rynfwlr6IWx_icLuZne8YdKWC1Shfm9GvlpfCGJmW9owOvP8vL3OVTehNCBTx4cPzWpauBRvF_ZN59fLD_thqC_rWvZDBWposQYGw' \
+--data-raw '{"firstName":"Sergey","lastName":"Kargopolov", "email":"test@test.com", "enabled":"true", "username":"app-user"}'
+
+-- Curl avec l'access token :
+    -H "cookie:SSO_TOKEN=eyJhb...."
+
+    Exemple en dev :
+    curl -XGET -H "cookie:SSO_TOKEN=eyJhb..." curl -v http://localhost:8083/back-utilisateur-web/api/v1/current
 
 security:
   oauth2:
@@ -291,6 +311,8 @@ java -cp /usr/share/tomcat/lib/catalina.jar org.apache.catalina.util.ServerInfo
 ===================================================================================================================================================================
 																			BDD
 ===================================================================================================================================================================
+-- MYSQL
+SELECT concat('drop table ',table_name,';') FROM information_schema.tables WHERE table_schema = 'keycloak';
 -- SELECT NOM DES TABLES du schéma INT_SCHEMA
 SELECT table_name FROM user_tables;
 select table_name, num_rows countd from dba_tables where owner ='INT_SCHEMA';

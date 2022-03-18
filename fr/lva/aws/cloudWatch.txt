@@ -1,0 +1,13 @@
+-- First request KONG with Correlation_id
+
+filter @logStream like 'ingress-kong'
+ | fields @timestamp, @message
+ | parse log '"*" * - - [*] - "* * *" - * - * - * - * - "*"' as service, remote_addr, timestamp, request_type, location, protocol, response_code, request_time, header_crm, correlation_id, consumer
+ | filter  correlation_id like '7163b42b-efbb-42a2-923f-f44496b65ac2#4002485'
+ | display remote_addr, request_type, location, response_code, request_time, correlation_id, header_crm, consumer,  log
+
+-- Find error in service facade
+
+filter @logStream like 'fft-rct-iamgdi-facade'
+ | fields @timestamp, @message
+ | filter @message like "7163b42b-efbb-42a2-923f-f44496b65ac2#3820318"
