@@ -9,6 +9,82 @@ spring:
     hibernate:
       ddl-auto: update
 ````
+
+## Configuration d'Hikari
+
+```yaml
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+```
+
+| Paramètre           | Description                                                         | Valeur par défaut          |
+| ------------------- | ------------------------------------------------------------------- | -------------------------- |
+| `maximumPoolSize`   | Max de connexions dans le pool (connexion = thread vers MySQL)      | 10                         |
+| `minimumIdle`       | Nombre minimum de connexions gardées au chaud                       | Même que `maximumPoolSize` |
+| `idleTimeout`       | Durée (ms) avant de fermer une connexion idle (si > minimumIdle)    | 600000 (10 min)            |
+| `maxLifetime`       | Durée max (ms) de vie d’une connexion avant qu’elle soit renouvelée | 1800000 (30 min)           |
+| `connectionTimeout` | Timeout (ms) max d’attente pour une connexion libre                 | 30000 (30 sec)             |
+| `validationTimeout` | Timeout (ms) pour tester la validité d’une connexion                | 5000                       |
+
+### Fonctionnement
+
+```scss
+[Démarrage Spring Boot]
+→ Hikari ouvre 5 connexions (minimumIdle = 5)
+
+[Requête entrante]
+→ Hikari donne une connexion dispo
+→ Requête SQL exécutée
+→ close() → retour dans le pool
+
+[Après 10 minutes (maxLifetime)]
+→ Hikari ferme cette connexion et en ouvre une nouvelle
+
+[Si pool plein et 20 requêtes arrivent en même temps]
+→ Hikari attend (connectionTimeout)
+→ Sinon : Exception
+```
+
+
+## Tips conf hibernate
+
+- Désactiver OSIV
+- Indexer les colonnes
+- Eviter les requêtes n+1 
+- Utiliser `@Transactional(readOnly=true)`
+- Implémenter les `equals` et `hashCode`
+```java
+ @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User)) return false;
+        User user = (User) o;
+        return id != null && id.equals(user.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+```
+- Charger des entités énormes
+-> utiliser des projections
+```java
+interface UserNameOnly {
+  String getUsername();
+}
+```
+->
+```java
+List<UserNameOnly> findByActiveTrue();
+```
+
 ## Liquibase
 Plugin maven : ``liquibase-maven-plugin``
 
