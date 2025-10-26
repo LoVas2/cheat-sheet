@@ -53,7 +53,7 @@ Les types primitifs sont passés par **valeur** alors que les objets et les tabl
 * do {} while ()
 * for (let i = 0; i < 5; i++) {}
 * for (let element of tableau) {}
-* for (let propriété in objet) {}
+* for (let propriété in objet) {} // parcours les propriétés d'un objet/ objet[propriété]
 * switch (action) { case 'dessiner' : dessine(); break; default: }
 
 ### Les opérateurs conditionnels
@@ -114,9 +114,25 @@ Parcourir un tableau :
 for (const currentValue of a) {
   // Faire quelque chose avec currentValue
 }
+
+// ForEach avec function
 a.forEach(function(currentValue, index, array) {
   // Faire quelque chose avec currentValue ou array[index]
 });
+//Exemple
+const numbers = [45, 4, 9, 16, 25];
+let txt = "";
+numbers.forEach(myFunction);
+function myFunction(value, index, array) {
+  txt += value;
+}
+
+// For in : parcours les propriétés
+const numbers = [45, 4, 9, 16, 25];
+let txt = "";
+for (let x in numbers) {
+  txt += numbers[x];
+}
 ````
 ### Méthodes utiles
 Méthode | Description
@@ -132,6 +148,9 @@ Méthode | Description
 function ajoute(x, y) {
   let total = x + y;
   return total;
+}
+
+const calculate = () => {
 }
 ```
 

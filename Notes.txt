@@ -107,7 +107,14 @@ Abonnement :
 L'AuthGuard et le Resolver sont tous les deux des guards. C'est  à peu près la même chose à la différence que dans un cas la résolution est attendue par le component, et dans l'autre c'est la navigation qui décide la redirection vers la bonne page.
 
 ======================================> how-to proxy to Backend
-Pour appeler un API exposé via web service REST depuis une application front déployée sur un domaine différent, il convient de mettre en place un proxy pour éviter "le problème" CORS.
+Le CORS sert au navigateur pour vérifier qu'un appelant (ex. une appli React) est autorisé a appelé le serveur.
+Le navigateur envoie alors une 1ère requête "preflight" (OPTIONS) pour récupérer les paramètres du serveur http.
+![components](fr/lva/img/cors-workflow.jpeg)
+
+Avec Spring Security, il faut autoriser le cors dans cla configuration du WebSecurityConfig
+
+Pour appeler un API exposé via web service REST depuis une application front déployée sur un domaine différent,
+il convient de mettre en place un proxy pour éviter "le problème" CORS.
 Solution 1: installer un proxy apache (solution non décrite ici)
 Solution 2: utiliser le proxy mis à disposition par webpack. C'est la méthode la plus simple à mon sens.
 créer un fichier proxy.conf.json à la racine du projet (au même niveau que le package.json) et ajouter la config suivante:
@@ -196,6 +203,11 @@ JBOSS-CLI : ./jboss-cli.sh --connect
 	- Liste les ear déployés : /deployment=*:read-attribute(name=name)
 	- Supprimer un déploiement : undeploy back-sso-bundle-1.1.5.1-P4.ear
 	:read-resource(include-runtime=true)
+	- Get conf stat BDD : /subsystem=datasources/data-source=KeycloakDS/statistics=pool:read-attribute(name=statistics-enabled)
+	/subsystem=datasources/data-source=KeycloakDS:read-attribute(name=max-pool-size)
+	/subsystem=datasources/data-source=KeycloakDS:write-attribute(name=max-pool-size, value=5)
+	- Update conf stat BDD : /subsystem=datasources/data-source=KeycloakDS/statistics=pool:write-attribute(name=statistics-enabled,value=true)
+	- Get stat BDD : /subsystem=datasources/data-source=KeycloakDS/statistics=pool/:read-resource(recursive=false,proxies=false,include-runtime=true,include-defaults=true)
 
 	# Configure jboss-logging event listener
 	/subsystem=keycloak-server/spi=eventsListener:add(default-provider=jboss-logging)
@@ -205,6 +217,19 @@ JBOSS-CLI : ./jboss-cli.sh --connect
 	/subsystem=keycloak-server/spi=eventsListener/provider=jboss-logging:write-attribute(name=properties.success-level,value=info)
 	/subsystem=keycloak-server/spi=eventsListener/provider=jboss-logging:write-attribute(name=properties.error-level,value=warn)
 	:reload
+
+
+Deploy with HTTP
+----------------
+curl --digest -L -D - http://localhost:9990/management --header "Content-Type: application/json" -d '{"operation" : "composite", "address" : [],
+"steps" : [{"operation" : "add", "address" : {"deployment" : "fft-iamgdi-reset-keycloak-theme-0.1.0.jar"},
+"content" : [{"url" : "file:/Users/loic/Data/Projets/06.FFT/workspace/fft-iamgdi-reset/build_keycloak/target/fft-iamgdi-reset-keycloak-theme-0.1.0.jar"}]},
+{"operation" : "deploy", "address" : {"deployment" : "fft-iamgdi-reset-keycloak-theme-0.1.0.jar"}}],"json.pretty":1}' -u admin:Azerty,123
+
+
+Undeploy with HTTP
+------------------
+curl --digest -L -D - http://localhost:9990/management --header "Content-Type: application/json" -d '{"operation" : "composite", "address" : [], "steps" : [{"operation" : "undeploy", "address" : {"deployment" : "fft-iamgdi-reset-keycloak-theme-0.1.0.jar"}},{"operation" : "remove", "address" : {"deployment" : "fft-iamgdi-reset-keycloak-theme-0.1.0.jar"}}],"json.pretty":1}' -u admin:Azerty,123
 
 -- Get credentials
 bin/kcadm.sh config credentials --server "http://localhost:8080/auth" --realm master --user "admin" --password "azerty"
@@ -220,13 +245,14 @@ bin/kcadm.sh create clients/f8710XXXX-xxx/protocol-mappers/models -r "master" -s
 -- Get Offline Token :
 curl -i --data "scope=offline_access&grant_type=password&client_id=project-oidc&client_secret=7e6XX-XXX&username=technical.user&password=XXX" http://localhost:8080/auth/realms/master/protocol/openid-connect/token | grep -Po 'access_token":"\K[^"]+' > access_token.txt
 
-curl -i --data "grant_type=password&client_id=tenup&username=loic&password=aa" http://localhost:8080/auth/realms/master/protocol/openid-connect/token | grep -Po 'access_token":"\K[^"]+'
+-- Get access Token with refresh token :
+curl -XPOST -i --data "client_id=project-oidc&client_secret=7e6XXX-XXX&grant_type=refresh_token&scope=openid%20profile&refresh_token=eyJhbGci..." http://localhost:8080/auth/realms/master/protocol/openid-connect/token
 
 -- Get access Token :
 curl -XPOST -i --data "client_id=authz-client&client_secret=OHiTU7wsIiJGbtF3pchctEt7NkF80N63&username=loic&grant_type=password&password=aabb" http://localhost:8080/auth/realms/iam/protocol/openid-connect/token
 
--- Get access Token with refresh token :
-curl -XPOST -i --data "client_id=project-oidc&client_secret=7e6XXX-XXX&grant_type=refresh_token&scope=openid%20profile&refresh_token=eyJhbGci..." http://localhost:8080/auth/realms/master/protocol/openid-connect/token
+-- Reset password URL page
+http://localhost:8080/auth/realms/master/protocol/openid-connect/auth?client_id=iam-test&redirect_uri=https%3A%2F%2Fwww.keycloak.org%2Fapp%2F%23url%3Dhttp%3A%2F%2Flocalhost%3A8080%2Fauth%26realm%3Dmaster%26client%3Diam-test&response_type=code&scope=openid&kc_action=UPDATE_PASSWORD
 
 curl --location --request POST 'https://qlf-iamgdi-keycloak.aws.fft.fr/auth/realms/master/protocol/openid-connect/token' \
 --header 'Content-Type: application/x-www-form-urlencoded' \
@@ -432,6 +458,12 @@ Ces caractères peuvent être déspécialisés avec le car. \
 [^abc] 	: Non a ou b ou c
 [a-z] 	: Lettre min. de a à z
 [a-z0-9_'] : Lettre min. de a à z ou entier ou _ ou '
+
+\p{L} - all letters from any language
+\p{N} - numbers
+\p{P} - punctuation
+\p{Z} - whitespace separators
+^$\n - add any symbols you want to keep
 
 ^((?!hede).)*$ : Ligne ne contenant pas hede
 

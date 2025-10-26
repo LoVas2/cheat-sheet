@@ -31,3 +31,24 @@ Les valeurs possibles se situent entre :
 Thread.MIN_PRIORITY : la valeur de la priorité minimale (0)
 Thread.MAX_PRIORITY : la valeur de la priorité maximale (10)
 Thread.NORM_PRIORITY : la valeur de la priorité normale (5)
+
+
+public static void main(String[] args) {
+List<String> l = List.of("azrty", "eve", "ava");
+System.out.println(l.stream().collect(groupingBy(s -> s.contains("e"))));
+System.out.println(l.stream().collect(groupingBy(s -> s.contains("e"), counting())));
+System.out.println(l.stream().collect(toMap(s -> s.contains("e"), e -> 1, Integer::sum)));
+l.stream()
+.collect(groupingBy(s -> s.contains("e"), counting()))
+.values().stream().anyMatch(i -> i>1)
+.forEach((contact, i)-> {
+System.out.println(contact + ": " + i);
+});
+
+        System.out.println(l.stream().filter(filterByAttribute(s -> s.length()==3 && s.contains("4"))).count());
+    }
+
+    public static <T> Predicate<T> filterByAttribute(Function<? super T, ?> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return (t) -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+    }
